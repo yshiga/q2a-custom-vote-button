@@ -6,53 +6,18 @@ class qa_html_theme_layer extends qa_html_theme_base
 	public function head_css()
 	{
 		qa_html_theme_base::head_css();
-		$plugin_url = '/qa-plugin/q2a-custom-vote-button/';
-		$button_img = $plugin_url . 'img/thumbs.png';
-		$css = "
-.qa-vote-first-button {
-	top: 12px;
-}
-.qa-vote-one-button {
-	top: 12px;
-}
-.qa-netvote-count {
-	margin-top: 17px;
-}
-.qa-vote-up-button,
-.qa-vote-up-hover,
-.qa-vote-up-disabled,
-.qa-voted-up-button,
-.qa-voted-up-hover {
-	background: url($button_img) no-repeat;
-	height: 30px;
-	width: 30px;
-}
-.qa-vote-up-button {
-    background-position: 0 0;
-    color: #f1c96b;
-}
-.qa-vote-up-disabled {
-    background-position: 0 -120px;
-    color: #CCC;
-}
-.qa-vote-up-hover,
-.qa-vote-up-button:hover {
-    background-position: 0 -30px;
-    color: #f1c96b;
-}
-.qa-voted-up-button {
-    background-position: 0 -60px;
-    color: #f1c96b;
-}
-.qa-voted-up-hover,
-.qa-voted-up-button:hover {
-    background-position: 0 -90px;
-    color: #f1c96b;
-}
-";
-		$this->output('<style>', $css, '</style>');
+		$plugin_url = qa_path('qa-plugin/q2a-custom-vote-button/');
+		$css = $plugin_url . 'custom-vote-button.css';
+		$this->output('<link rel="stylesheet" type="text/css" href="'.$css.'">');
 	}
 
+	public function voting_inner_html($post)
+	{
+		$this->vote_buttons($post);
+		$this->vote_count($post);
+		$this->vote_avatars($post);
+		$this->vote_clear();
+	}
 	public function vote_buttons($post)
 	{
 		$this->output('<div class="qa-vote-buttons '.(($post['vote_view'] == 'updown') ? 'qa-vote-buttons-updown' : 'qa-vote-buttons-net').'">');
@@ -94,10 +59,13 @@ class qa_html_theme_layer extends qa_html_theme_base
 		$this->output('</div>');
 	}
 
-		public function vote_count($post)
-		{
-			$post['netvotes_view']['prefix'] = '';
-			qa_html_theme_base::vote_count($post);
-		}
+	public function vote_count($post)
+	{
+		$post['netvotes_view']['prefix'] = '';
+		qa_html_theme_base::vote_count($post);
+	}
 
+	public function vote_avatars()
+	{
+	}
 }
