@@ -15,9 +15,12 @@ class qa_html_theme_layer extends qa_html_theme_base
 	{
 		$this->vote_buttons($post);
 		$this->vote_count($post);
-		$this->vote_avatars($post);
+		if (!qa_is_mobile_probably()) {
+			$this->vote_avatars($post);
+		}
 		$this->vote_clear();
 	}
+
 	public function vote_buttons($post)
 	{
 		$this->output('<div class="qa-vote-buttons '.(($post['vote_view'] == 'updown') ? 'qa-vote-buttons-updown' : 'qa-vote-buttons-net').'">');
@@ -67,5 +70,13 @@ class qa_html_theme_layer extends qa_html_theme_base
 
 	public function vote_avatars()
 	{
+		$this->output('<div class="voted-avatar-list" ><ul>');
+		$avatar = '<li class="qa-voted-avatar">
+	<a href="http://dev.q2a.com/user/testuser1" class="qa-avatar-link" original-title="" title=""><img src="http://dev.q2a.com/?qa=image&qa_blobid=7162451989466937721&qa_size=20" width="20" height="20" class="qa-avatar-image" alt=""></a>
+</li>';
+		for($i = 1; $i < 10; $i++) {
+			$this->output($avatar);
+		}
+		$this->output('</ul></div>');
 	}
 }
