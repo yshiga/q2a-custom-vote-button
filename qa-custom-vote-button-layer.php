@@ -17,7 +17,8 @@ class qa_html_theme_layer extends qa_html_theme_base
 	{
 		$this->vote_buttons($post);
 		$this->vote_count($post);
-		if (!qa_is_mobile_probably()) {
+		// モバイルでない かつ 投稿リスト内ではない
+		if (!qa_is_mobile_probably() && !$this->is_q_list($post)) {
 			$this->vote_avatars($post);
 		}
 		$this->vote_clear();
@@ -70,6 +71,16 @@ class qa_html_theme_layer extends qa_html_theme_base
 		qa_html_theme_base::vote_count($post);
 	}
 
+	public function body_footer()
+	{
+		qa_html_theme_base::body_footer();
+		if (!qa_is_mobile_probably() && $this->template === 'question') {
+			$plugin_url = qa_path('qa-plugin/q2a-custom-vote-button/');
+			$script = $plugin_url . 'custom-vote-button.js';
+			$this->output('<script type="text/javascript" src="'.$script.'"></script>');
+		}
+	}
+
 	/**
 	 * 支持した人のアイコンを表示する
 	 * @param  array $post その投稿
@@ -78,13 +89,16 @@ class qa_html_theme_layer extends qa_html_theme_base
 	public function vote_avatars($post)
 	{
 		$voted_user_icons = $this->get_voted_user_icons($post);
+		$this->output('<div class="voted-avatar-list" >');
 		if (!empty($voted_user_icons)) {
-			$this->output('<div class="voted-avatar-list" ><ul>');
+			$this->output('<ul>');
 			foreach ( $voted_user_icons as $icon ) {
 				$this->output('<li class="qa-voted-avatar">'.$icon.'<li>');
 			}
-			$this->output('</ul></div>');
+			$this->output('</ul>');
 		}
+		$this->output('<div style="clear:both;"></div>');
+		$this->output('</div>');
 	}
 
 	/**
@@ -148,5 +162,21 @@ IN ( SELECT userid FROM ^uservotes WHERE postid = # AND vote = 1 )
 		} else {
 			return false;
 		}
+	}
+
+	/**
+	 * 質問リスト内の投稿かどうか
+	 * @param  array  $post 現在の投稿
+	 * @return boolean      投稿リスト内ならtrue
+	 */
+	private function is_q_list($post)
+	{
+		$keys = array_keys($post);
+		foreach ($keys as $key) {
+			if ($key === 'c_list') {
+				return false;
+			}
+		}
+		return true;
 	}
 }
