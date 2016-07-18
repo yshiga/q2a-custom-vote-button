@@ -1,13 +1,21 @@
 $(document).ready(function(){
-	var va_lists = [];
-	$(".voted-avatar-list").each(function(i, elem) {
-		va_lists.push($(elem).height());
-	});
-	console.log(va_lists);
-	// var favbutton = $(".qa-q-view-favorite .qa-favoriting");
-	// var favpos = favbutton.position();
-	// var asel = $(".qa-a-selection");
-	// var aselpos = asel.position();
-	// favbutton.css("top", favpos.top + aicons_height + "px");
-	// asel.css("top", aselpos.top + aicons_height + "px");
+
+	var set_buttons_height = function() {
+		var avatar_list_heights = [];
+		$(".voted-avatar-list").each(function(i, elem) {
+			avatar_list_heights.push($(elem).height());
+		});
+
+		var favbutton = $(".qa-q-view-favorite .qa-favoriting");
+		var favpos = favbutton.position();
+
+		favbutton.css("top", favpos.top + avatar_list_heights[0] + "px");
+		$(".qa-a-selection").each(function(i, elem) {
+			var elempos = $(elem).position();
+			$(elem).css("top", elempos.top + avatar_list_heights[i + 1] + "px");
+		});
+	}
+
+	set_buttons_height();
+
 });

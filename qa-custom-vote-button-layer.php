@@ -3,7 +3,7 @@
 class qa_html_theme_layer extends qa_html_theme_base
 {
 	const TARGET_DATE = '2016-07-15';
-	const AVATAR_SIZE = 20;
+	const AVATAR_SIZE = 80;
 
 	public function head_css()
 	{
@@ -172,7 +172,12 @@ IN ( SELECT userid FROM ^uservotes WHERE postid = # AND vote = 1 )
 	private function is_q_list($post)
 	{
 		$keys = array_keys($post);
+		if (count($keys) <= 19) {
+			// ajax 呼び出しの場合keyの数が19個
+			return false;
+		}
 		foreach ($keys as $key) {
+			// 質問リストには c_list なし
 			if ($key === 'c_list') {
 				return false;
 			}
