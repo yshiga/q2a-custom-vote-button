@@ -2,55 +2,26 @@
 
 class qa_html_theme_layer extends qa_html_theme_base
 {
+	const TARGET_DATE = '2016-07-15';
+	const AVATAR_SIZE = 80;
 
 	public function head_css()
 	{
 		qa_html_theme_base::head_css();
-		$plugin_url = '/qa-plugin/q2a-custom-vote-button/';
-		$button_img = $plugin_url . 'img/thumbs.png';
-		$css = "
-.qa-vote-first-button {
-	top: 12px;
-}
-.qa-vote-one-button {
-	top: 12px;
-}
-.qa-netvote-count {
-	margin-top: 17px;
-}
-.qa-vote-up-button,
-.qa-vote-up-hover,
-.qa-vote-up-disabled,
-.qa-voted-up-button,
-.qa-voted-up-hover {
-	background: url($button_img) no-repeat;
-	height: 30px;
-	width: 30px;
-}
-.qa-vote-up-button {
-    background-position: 0 0;
-    color: #f1c96b;
-}
-.qa-vote-up-disabled {
-    background-position: 0 -120px;
-    color: #CCC;
-}
-.qa-vote-up-hover,
-.qa-vote-up-button:hover {
-    background-position: 0 -30px;
-    color: #f1c96b;
-}
-.qa-voted-up-button {
-    background-position: 0 -60px;
-    color: #f1c96b;
-}
-.qa-voted-up-hover,
-.qa-voted-up-button:hover {
-    background-position: 0 -90px;
-    color: #f1c96b;
-}
-";
-		$this->output('<style>', $css, '</style>');
+		$plugin_url = qa_path('qa-plugin/q2a-custom-vote-button/');
+		$css = $plugin_url . 'custom-vote-button.css';
+		$this->output('<link rel="stylesheet" type="text/css" href="'.$css.'">');
+	}
+
+	public function voting_inner_html($post)
+	{
+		$this->vote_buttons($post);
+		$this->vote_count($post);
+		// モバイルでない かつ 投稿リスト内ではない
+		if (!qa_is_mobile_probably() && !$this->is_q_list($post)) {
+			$this->vote_avatars($post);
+		}
+		$this->vote_clear();
 	}
 
 	public function vote_buttons($post)
@@ -94,10 +65,123 @@ class qa_html_theme_layer extends qa_html_theme_base
 		$this->output('</div>');
 	}
 
-		public function vote_count($post)
-		{
-			$post['netvotes_view']['prefix'] = '';
-			qa_html_theme_base::vote_count($post);
+	public function vote_count($post)
+	{
+		$post['netvotes_view']['prefix'] = '';
+		qa_html_theme_base::vote_count($post);
+	}
+
+	public function body_footer()
+	{
+		qa_html_theme_base::body_footer();
+		if (!qa_is_mobile_probably() && $this->template === 'question') {
+			$plugin_url = qa_path('qa-plugin/q2a-custom-vote-button/');
+			$script = $plugin_url . 'custom-vote-button.js';
+			$this->output('<script type="text/javascript" src="'.$script.'"></script>');
+		}
+	}
+
+	/**
+	 * 支持した人のアイコンを表示する
+	 * @param  array $post その投稿
+	 * @return なし
+	 */
+	public function vote_avatars($post)
+	{
+		$voted_user_icons = $this->get_voted_user_icons($post);
+		$this->output('<div class="voted-avatar-list" >');
+		if (!empty($voted_user_icons)) {
+			$this->output('<ul>');
+			foreach ( $voted_user_icons as $icon ) {
+				$this->output('<li class="qa-voted-avatar">'.$icon.'<li>');
+			}
+			$this->output('</ul>');
+		}
+		$this->output('<div style="clear:both;"></div>');
+		$this->output('</div>');
+	}
+
+	/**
+	 * 支持しているユーザーのユーザーIDを収得
+	 * @param  string $postid ポストID
+	 * @return array         ユーザーID
+	 */
+	private function get_voted_users($postid)
+	{
+		if (empty($postid)) {
+			return array();
 		}
 
+		$sql = "SELECT *
+FROM ^users
+WHERE userid
+IN ( SELECT userid FROM ^uservotes WHERE postid = # AND vote = 1 )
+";
+		return qa_db_read_all_assoc(qa_db_query_sub($sql, $postid));
+	}
+
+	/**
+	 * 支持したユーザーのアバターアイコンを取得
+	 * @param  array $post その投稿
+	 * @return array       アバターアイコンのhtml
+	 */
+	private function get_voted_user_icons($post)
+	{
+		$result = array();
+		$postid = $post['raw']['postid'];
+		$created = $post['raw']['created'];
+
+		if (isset($postid) && $this->is_after_date($created, self::TARGET_DATE)) {
+			$users = array();
+			$users = $this->get_voted_users($postid);
+
+			foreach ($users as $user) {
+				if (QA_FINAL_EXTERNAL_USERS) {
+					$result[]= qa_get_external_avatar_html($user['userid'], self::AVATAR_SIZE, false);
+				} else {
+					$result[]= qa_get_user_avatar_html($user['flags'], $user['email'], $user['handle'],
+						$user['avatarblobid'], $user['avatarwidth'], $user['avatarheight'], self::AVATAR_SIZE);
+				}
+			}
+
+		}
+		return $result;
+	}
+
+	/**
+	 * 投稿日指定日付より後かどうかを返す
+	 * @param  string $created 投稿日のタイムスタンプ
+	 * @param  string  $target  指定日付 YYYY-MM-DD
+	 * @return boolean          指定日付以降ならtrue
+	 */
+	private function is_after_date($created, $target)
+	{
+		$targetDay = new DateTime($target);
+		if ($created >= $targetDay->getTimestamp()) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * 質問リスト内の投稿かどうか
+	 * @param  array  $post 現在の投稿
+	 * @return boolean      投稿リスト内ならtrue
+	 */
+	private function is_q_list($post)
+	{
+		$keys = array_keys($post);
+		if (count($keys) <= 19) {
+			// ajax 呼び出しの場合keyの数が19個
+			return false;
+		}
+		foreach ($keys as $key) {
+			// 質問リストには c_list なし
+			if ($key === 'c_list') {
+				return false;
+			}
+		}
+		return true;
+	}
 }
