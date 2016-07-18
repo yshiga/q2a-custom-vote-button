@@ -2,6 +2,8 @@
 
 class qa_html_theme_layer extends qa_html_theme_base
 {
+	const TARGET_DATE = '2016-07-15';
+	const AVATAR_SIZE = 20;
 
 	public function head_css()
 	{
@@ -68,15 +70,83 @@ class qa_html_theme_layer extends qa_html_theme_base
 		qa_html_theme_base::vote_count($post);
 	}
 
-	public function vote_avatars()
+	/**
+	 * 支持した人のアイコンを表示する
+	 * @param  array $post その投稿
+	 * @return なし
+	 */
+	public function vote_avatars($post)
 	{
-		$this->output('<div class="voted-avatar-list" ><ul>');
-		$avatar = '<li class="qa-voted-avatar">
-	<a href="http://dev.q2a.com/user/testuser1" class="qa-avatar-link" original-title="" title=""><img src="http://dev.q2a.com/?qa=image&qa_blobid=7162451989466937721&qa_size=20" width="20" height="20" class="qa-avatar-image" alt=""></a>
-</li>';
-		for($i = 1; $i < 10; $i++) {
-			$this->output($avatar);
+		$voted_user_icons = $this->get_voted_user_icons($post);
+		if (!empty($voted_user_icons)) {
+			$this->output('<div class="voted-avatar-list" ><ul>');
+			foreach ( $voted_user_icons as $icon ) {
+				$this->output('<li class="qa-voted-avatar">'.$icon.'<li>');
+			}
+			$this->output('</ul></div>');
 		}
-		$this->output('</ul></div>');
+	}
+
+	/**
+	 * 支持しているユーザーのユーザーIDを収得
+	 * @param  string $postid ポストID
+	 * @return array         ユーザーID
+	 */
+	private function get_voted_users($postid)
+	{
+		if (empty($postid)) {
+			return array();
+		}
+
+		$sql = "SELECT *
+FROM ^users
+WHERE userid
+IN ( SELECT userid FROM ^uservotes WHERE postid = # AND vote = 1 )
+";
+		return qa_db_read_all_assoc(qa_db_query_sub($sql, $postid));
+	}
+
+	/**
+	 * 支持したユーザーのアバターアイコンを取得
+	 * @param  array $post その投稿
+	 * @return array       アバターアイコンのhtml
+	 */
+	private function get_voted_user_icons($post)
+	{
+		$result = array();
+		$postid = $post['raw']['postid'];
+		$created = $post['raw']['created'];
+
+		if (isset($postid) && $this->is_after_date($created, self::TARGET_DATE)) {
+			$users = array();
+			$users = $this->get_voted_users($postid);
+
+			foreach ($users as $user) {
+				if (QA_FINAL_EXTERNAL_USERS) {
+					$result[]= qa_get_external_avatar_html($user['userid'], self::AVATAR_SIZE, false);
+				} else {
+					$result[]= qa_get_user_avatar_html($user['flags'], $user['email'], $user['handle'],
+						$user['avatarblobid'], $user['avatarwidth'], $user['avatarheight'], self::AVATAR_SIZE);
+				}
+			}
+
+		}
+		return $result;
+	}
+
+	/**
+	 * 投稿日指定日付より後かどうかを返す
+	 * @param  string $created 投稿日のタイムスタンプ
+	 * @param  string  $target  指定日付 YYYY-MM-DD
+	 * @return boolean          指定日付以降ならtrue
+	 */
+	private function is_after_date($created, $target)
+	{
+		$targetDay = new DateTime($target);
+		if ($created >= $targetDay->getTimestamp()) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
