@@ -13,6 +13,16 @@ class qa_html_theme_layer extends qa_html_theme_base
 		$this->output('<link rel="stylesheet" type="text/css" href="'.$css.'">');
 	}
 
+	public function main_part($key, $part)
+	{
+		if ($this->template === 'user' && $key === 'form_activity') {
+			$newpart = $this->remove_downvote($part);
+			qa_html_theme_base::main_part($key, $newpart);
+			return;
+		}
+		qa_html_theme_base::main_part($key, $part);
+	}
+
 	public function voting_inner_html($post)
 	{
 		$this->vote_buttons($post);
@@ -183,5 +193,20 @@ IN ( SELECT userid FROM ^uservotes WHERE postid = # AND vote = 1 )
 			}
 		}
 		return true;
+	}
+
+	private function remove_downvote($part)
+	{
+		$points = $this->content['raw']['points'];
+		$upvotes = $points['aupvotes'] + $points['qupvotes'];
+		$innervalue = '<span class="qa-uf-user-upvotes">'.number_format($upvotes).'</span>';
+		$votegavevalue = (($upvotes == 1) ? qa_lang_html_sub('profile/1_up_vote', $innervalue, '1') : qa_lang_html_sub('profile/x_up_votes', $innervalue));
+		$part['fields']['votegave']['value'] = $votegavevalue;
+
+		$innervalue = '<span class="qa-uf-user-upvoteds">'.number_format($points['upvoteds']).'</span>';
+		$votegotvalue = ((@$userpoints['upvoteds'] == 1) ? qa_lang_html_sub('profile/1_up_vote', $innervalue, '1')
+			: qa_lang_html_sub('profile/x_up_votes', $innervalue));
+		$part['fields']['votegot']['value'] = $votegotvalue;
+		return $part;
 	}
 }
