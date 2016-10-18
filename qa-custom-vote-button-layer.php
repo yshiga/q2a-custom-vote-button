@@ -41,44 +41,61 @@ class qa_html_theme_layer extends qa_html_theme_base
 		switch (@$post['vote_state'])
 		{
 			case 'voted_up':
-				$this->post_hover_button($post, 'vote_up_tags', '+', 'qa-vote-one-button qa-voted-up');
+				$this->post_hover_button($post, 'vote_up_tags', 'thumb_up', 'mdl-button--colored qa-vote-one-button qa-voted-up');//mdl-button--colored クリックされたらボタンの色が変わる
 				break;
 
 			case 'voted_up_disabled':
-				$this->post_disabled_button($post, 'vote_up_tags', '+', 'qa-vote-one-button qa-vote-up');
+				$this->post_disabled_button($post, 'vote_up_tags', 'thumb_up', 'qa-vote-one-button qa-vote-up');
 				break;
 
 			case 'voted_down':
-				// $this->post_hover_button($post, 'vote_down_tags', '&ndash;', 'qa-vote-one-button qa-voted-down');
+				$this->post_hover_button($post, 'vote_down_tags', 'thumb_up', 'qa-vote-one-button qa-voted-down');
 				break;
 
 			case 'voted_down_disabled':
-				// $this->post_disabled_button($post, 'vote_down_tags', '&ndash;', 'qa-vote-one-button qa-vote-down');
+				$this->post_disabled_button($post, 'vote_down_tags', 'thumb_up', 'qa-vote-one-button qa-vote-down');
 				break;
 
 			case 'up_only':
-				$this->post_hover_button($post, 'vote_up_tags', '+', 'qa-vote-first-button qa-vote-up');
-				// $this->post_disabled_button($post, 'vote_down_tags', '', 'qa-vote-second-button qa-vote-down');
+				$this->post_hover_button($post, 'vote_up_tags', 'thumb_up', 'qa-vote-first-button qa-vote-up');
+				$this->post_disabled_button($post, 'vote_down_tags', '', 'qa-vote-second-button qa-vote-down');
 				break;
 
 			case 'enabled':
-				$this->post_hover_button($post, 'vote_up_tags', '+', 'qa-vote-first-button qa-vote-up');
-				// $this->post_hover_button($post, 'vote_down_tags', '&ndash;', 'qa-vote-second-button qa-vote-down');
+				$this->post_hover_button($post, 'vote_up_tags', 'thumb_up', 'qa-vote-first-button qa-vote-up');
+				//$this->post_hover_button($post, 'vote_down_tags', 'thumb_up', 'qa-vote-second-button qa-vote-down');
 				break;
 
 			default:
 				$this->post_disabled_button($post, 'vote_up_tags', '', 'qa-vote-first-button qa-vote-up');
-				// $this->post_disabled_button($post, 'vote_down_tags', '', 'qa-vote-second-button qa-vote-down');
+				$this->post_disabled_button($post, 'vote_down_tags', '', 'qa-vote-second-button qa-vote-down');
 				break;
 		}
 
 		$this->output('</div>');
 	}
 
+	public function post_hover_button($post, $element, $value, $class)
+	{
+		if (isset($post[$element]))
+			// HTMLをinputからbuttonタグに変更し、アイコンを追加
+			$this->output('<button '.$post[$element].' class="'.$class.'-button mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect"><i class="material-icons">'.$value.'</i></button>');
+	}
+
 	public function vote_count($post)
 	{
 		$post['netvotes_view']['prefix'] = '';
-		qa_html_theme_base::vote_count($post);
+		$this->output('<span class="qa-vote-count '.(($post['vote_view'] == 'updown') ? 'qa-vote-count-updown' : 'qa-vote-count-net').'"'.@$post['vote_count_tags'].'>');
+
+		if ($post['vote_view'] == 'updown') {
+			$this->output_split($post['upvotes_view'], 'qa-upvote-count');
+			$this->output_split($post['downvotes_view'], 'qa-downvote-count');
+
+		}
+		else
+			$this->output_split($post['netvotes_view'], 'qa-netvote-count');
+
+		$this->output('</span>');
 	}
 
 	public function body_footer()
@@ -98,17 +115,19 @@ class qa_html_theme_layer extends qa_html_theme_base
 	 */
 	public function vote_avatars($post)
 	{
-		$voted_user_icons = $this->get_voted_user_icons($post);
-		$this->output('<div class="voted-avatar-list" >');
-		if (!empty($voted_user_icons)) {
-			$this->output('<ul>');
-			foreach ( $voted_user_icons as $icon ) {
-				$this->output('<li class="qa-voted-avatar">'.$icon.'<li>');
-			}
-			$this->output('</ul>');
-		}
-		$this->output('<div style="clear:both;"></div>');
-		$this->output('</div>');
+		// 2016.10.18 現段階でアバターリスト表示させない
+
+		//$voted_user_icons = $this->get_voted_user_icons($post);
+		//$this->output('<div class="voted-avatar-list" >');
+		//if (!empty($voted_user_icons)) {
+		//	$this->output('<ul>');
+		//	foreach ( $voted_user_icons as $icon ) {
+		//		$this->output('<li class="qa-voted-avatar">'.$icon.'<li>');
+		//	}
+		//	$this->output('</ul>');
+		//}
+		//$this->output('<div style="clear:both;"></div>');
+		//$this->output('</div>');
 	}
 
 	/**
