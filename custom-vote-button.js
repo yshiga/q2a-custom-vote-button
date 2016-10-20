@@ -8,12 +8,13 @@ $(document).ready(function(){
 
 		var favbutton = $(".qa-q-view-favorite .qa-favoriting");
 		var favpos = favbutton.position();
-
-		favbutton.css("top", favpos.top + avatar_list_heights[0] + "px");
-		$(".qa-a-selection").each(function(i, elem) {
-			var elempos = $(elem).position();
-			$(elem).css("top", elempos.top + avatar_list_heights[i + 1] + "px");
-		});
+		if (favpos !== undefined) {
+			favbutton.css("top", favpos.top + avatar_list_heights[0] + "px");
+			$(".qa-a-selection").each(function(i, elem) {
+				var elempos = $(elem).position();
+				$(elem).css("top", elempos.top + avatar_list_heights[i + 1] + "px");
+			});
+		}
 	}
 
 	set_buttons_height();
